@@ -1,0 +1,12 @@
+{% extends 'interface/base.html' %}
+
+{% block body %}
+
+    {% for post in posts %}
+
+        <h1><a href="{% url 'interface:post:view' post.id %}">{{ post.subject }}</a></h1>
+        <p>{{ post.content|truncatewords:50 }}</p>
+
+    {% endfor %}
+
+{% endblock %}
