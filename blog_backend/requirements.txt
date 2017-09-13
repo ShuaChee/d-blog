@@ -1,1 +1,6 @@
-Django==1.7.7
+colorclass==1.2.0
+Django==1.8.12
+formats==0.1.1
+requests==2.12.1
+six==1.10.0
+tortilla==0.4.2
