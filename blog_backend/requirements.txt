@@ -1,6 +1,6 @@
 colorclass==1.2.0
 Django==1.8.12
 formats==0.1.1
-requests==2.12.1
+requests==2.20.0
 six==1.10.0
 tortilla==0.4.2
