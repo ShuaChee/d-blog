@@ -1,6 +1,6 @@
-from django.conf.urls import patterns, include, url
+from django.conf.urls import include, url
 
 
-urlpatterns = patterns('',
-    url(r'^', include('interface.urls', namespace='interface')),
-)
+urlpatterns = [
+    url(r'^', include('interface.urls')),
+]

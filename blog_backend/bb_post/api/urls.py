@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from .views import post
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', post.Collection.as_view()),
     url(r'^/(?P<post_id>\d+)$', post.Single.as_view()),
-)
+]
