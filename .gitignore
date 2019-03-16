@@ -106,3 +106,4 @@ venv.bak/
 .idea/
 db.sqlite3
 __pycache__/
+blog_backend/local_settings

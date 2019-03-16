@@ -1,9 +1,8 @@
-from django.conf.urls import url
+from django.urls import path
 
 from .views import post
 
-
 urlpatterns = [
-    url(r'^$', post.Collection.as_view()),
-    url(r'^/(?P<post_id>\d+)$', post.Single.as_view()),
+    path('', post.Collection.as_view()),
+    path('<int:post_id>/', post.Single.as_view()),
 ]

@@ -1,10 +1,10 @@
-from django.conf.urls import url
+from django.urls import path
 
-from .views import user
+from bb_user.api.views import user
 
 
 urlpatterns = [
-    url(r'^/create', user.UserRegister.as_view()),
-    url(r'^/login', user.UserLogin.as_view()),
-    url(r'^/logout', user.UserLogout.as_view()),
+    path('create/', user.UserRegister.as_view()),
+    path('login/', user.UserLogin.as_view()),
+    path('logout/', user.UserLogout.as_view()),
 ]
