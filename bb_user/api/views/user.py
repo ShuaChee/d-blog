@@ -1,19 +1,18 @@
-import json
-from django.views.generic import View, CreateView
+from django.http import JsonResponse
+from django.views.generic import View
+from utils.api.mixins import APIMixin
 from django.http import HttpResponse
 from django.contrib.auth import get_user_model, authenticate, login, logout
-from bb_user.models import User
+from django.contrib.auth.hashers import make_password
 
 
-class UserRegister(CreateView):
-    model = User
+class UserRegister(APIMixin, View):
 
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        password = data['password']
-        confirm_password = data['confirm_password']
-        email = data['email']
-        username = data['username']
+    def post(self, request, parameters, *args, **kwargs):
+        password = parameters['password']
+        confirm_password = parameters['confirm_password']
+        email = parameters['email']
+        username = parameters['username']
         user_model = get_user_model()
 
         if password != confirm_password:
@@ -22,13 +21,17 @@ class UserRegister(CreateView):
         try:
             user = user_model.objects.create(
                 username=username,
-                password=password,
+                password=make_password(password),
                 email=email
             )
             user.save()
-            return HttpResponse('User registered')
+            return {
+                'message': 'User Registered'
+            }
         except:
-            return HttpResponse('Email or username already taken')
+            return {
+                'message': 'Email or username already taken'
+            }
 
     def get(self, request, *args, **kwargs):
         # todo: this is for example how to call user model!
@@ -37,18 +40,24 @@ class UserRegister(CreateView):
         return HttpResponse('Register')
 
 
-class UserLogin(View):
-    def post(self, request, *args, **kwargs):
-        data = json.loads(request.body)
-        user = authenticate(username=data['username'], password=data['password'])
+class UserLogin(APIMixin, View):
+    def post(self, request, parameters, *args, **kwargs):
+        user = authenticate(username=parameters['username'], password=parameters['password'])
 
         if user is None:
-            return HttpResponse('Wrong Username or Password')
+            return {
+                'message': 'Wrong Username or Password'
+            }
         else:
             login(request, user)
-            return HttpResponse('U R logged In')
+            return {
+                'message': 'You are logged in'
+            }
 
 
 class UserLogout(View):
     def get(self, request, *args, **kwargs):
-        return HttpResponse('Logout')
+        logout(request)
+        return JsonResponse({
+                'message': 'Logged out'
+            })
