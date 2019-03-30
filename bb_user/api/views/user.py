@@ -38,24 +38,27 @@ class APIView(View):
         return result
 
 
-class UserRegister(APIMixin, View):
+class UserRegister(APIView):
 
     def post(self, request, parameters, *args, **kwargs):
-        user_model = get_user_model()
 
         if parameters['password'] != parameters['confirm_password']:
-            return {'message': 'Check password'}
+            return JsonResponse({'message': 'Check password'}, status=200)
 
-        try:
-            user = user_model.objects.create(
-                username=parameters['username'],
-                password=make_password(parameters['password']),
-                email=parameters['email']
-            )
-            user.save()
-            return {'message': 'User Registered'}
-        except:
-            return {'message': 'Email or username already taken'}
+        if self.user_model.objects.filter(username=parameters['username']):
+            return JsonResponse({'message': 'Username already taken'}, status=200)
+
+        if self.user_model.objects.filter(email=parameters['email']):
+            return JsonResponse({'message': 'Email already taken'}, status=200)
+
+        user = self.user_model.objects.create(
+            username=parameters['username'],
+            password=make_password(parameters['password']),
+            email=parameters['email']
+        )
+        user.save()
+        return JsonResponse({'message': 'User Registered'}, status=200)
+
 
     def get(self, request, *args, **kwargs):
         # todo: this is for example how to call user model!
