@@ -50,10 +50,12 @@ class APIView(View):
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
-        # try:
-        result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
-        # except:
-        # return JsonResponse({'Message': 'Something wrong'}, status=500)
+        self.access_token = self.get_access_token(request)
+        self.session = self.get_user_session(self.access_token)
+        try:
+            result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
+        except:
+            return JsonResponse({'Message': 'Something wrong'}, status=500)
         return result
 
 
@@ -88,21 +90,21 @@ class UserRegister(APIView):
 class UserLogin(APIView):
     def post(self, request, parameters, *args, **kwargs):
 
-        access_token = self.get_access_token(request)
-        session = self.get_user_session(access_token)
-        if access_token:
-            if not session:
-                return JsonResponse({'Message': 'Invalid Token'}, status=403)
+        if not self.access_token:
+            return self.login_with_username_and_password(parameters)
 
-            if self.access_token_is_expired(access_token):
-                return JsonResponse({'Message': 'Relogin Please'}, status=403)
+        if not self.session:
+            return JsonResponse({'Message': 'Invalid Token'}, status=403)
 
-            user = self.user_model.objects.get(pk=session.user.id)
-            login(request, user)
-            return JsonResponse({'Message': 'You Are Logged In'}, status=200)
+        if self.access_token_is_expired(self.access_token):
+            return JsonResponse({'Message': 'Relogin Please'}, status=403)
 
+        user = self.user_model.objects.get(pk=self.session.user.id)
+        login(request, user)
+        return JsonResponse({'Message': 'You Are Logged In'}, status=200)
+
+    def login_with_username_and_password(self, parameters):
         user = authenticate(username=parameters['username'], password=parameters['password'])
-
         if user is None:
             return JsonResponse({
                 'message': 'Wrong Username or Password'
@@ -122,8 +124,6 @@ class UserLogin(APIView):
 
 class UserLogout(APIView):
     def post(self, request, *args, **kwargs):
-        access_token = self.get_access_token(request)
-        session = self.get_user_session(access_token)
-        if session:
-            session.delete()
+        if self.session:
+            self.session.delete()
         return JsonResponse({'message': 'Logged out'}, status=200)
