@@ -4,3 +4,4 @@ formats==0.1.1
 requests==2.20.0
 six==1.10.0
 tortilla==0.4.2
+PyJWT==1.7.1
