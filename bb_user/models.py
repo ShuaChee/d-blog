@@ -7,7 +7,7 @@ class User(AbstractUser):
     # user_email = models.EmailField(unique=True)
     # user_name = models.CharField(max_length=30, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    is_blocked = models.BooleanField(default=False)
     # verified = models.BooleanField(default=False)
     # gravatar = models.URLField(blank=True, null=True)
 
