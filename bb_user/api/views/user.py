@@ -52,10 +52,10 @@ class APIView(View):
     def dispatch(self, request, *args, **kwargs):
         self.access_token = self.get_access_token(request)
         self.session = self.get_user_session(self.access_token)
-        try:
-            result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
-        except:
-            return JsonResponse({'Message': 'Something wrong'}, status=500)
+        #try:
+        result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
+        #except:
+            #return JsonResponse({'Message': 'Something wrong'}, status=500)
         return result
 
 
@@ -110,7 +110,7 @@ class UserLogin(APIView):
                 'message': 'Wrong Username or Password'
             }, status=400)
         else:
-            access_token = jwt.encode({'user_id': user.id}, settings.SECRET_KEY, algorithm='HS256')
+            access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY, algorithm='HS256')
             session = UserSessions.objects.create(
                 user=user,
                 access_token=access_token.decode('utf-8')
