@@ -9,7 +9,7 @@ from utils.api.exceptions import APIError, RequestDecodeFailedAPIError
 
 
 class APIMixin(object):
-
+    
     def get_parameters(self, request):
 
         parameters = {}

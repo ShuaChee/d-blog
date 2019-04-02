@@ -3,9 +3,10 @@ import jwt
 from datetime import datetime, timezone
 
 from django.conf import settings
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
+from django.core.mail import send_mail
 from django.views.generic import View
-from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth import get_user_model, authenticate, login
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.hashers import make_password
 from bb_user.models import UserSessions
@@ -78,6 +79,13 @@ class UserRegister(APIView):
             email=parameters['email']
         )
         user.save()
+        send_mail(
+            'Congratulation! You are registered',
+            'Hello {1}! /n Login: {0} /n Password: {1}'.format(parameters['username'], parameters['password']),
+            settings.ADMIN_EMAIL,
+            [parameters['email']],
+            fail_silently=False,
+        )
         return JsonResponse({'message': 'User Registered'}, status=200)
 
     def get(self, request, *args, **kwargs):

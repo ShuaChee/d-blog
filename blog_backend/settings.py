@@ -32,6 +32,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -61,6 +63,8 @@ DATABASES = {
 }
 
 LANGUAGE_CODE = 'en-us'
+
+ADMIN_EMAIL = 'admin@localhost.com'
 
 TIME_ZONE = 'UTC'
 
