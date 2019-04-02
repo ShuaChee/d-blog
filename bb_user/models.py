@@ -15,7 +15,7 @@ class User(AbstractUser):
         return '{0} - {1}'.format(self.username, self.email)
 
 
-class UserSessions(models.Model):
+class AuthToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     access_token = models.CharField(max_length=200)
     expired_at = models.DateTimeField(default=datetime.now() + timedelta(days=30))

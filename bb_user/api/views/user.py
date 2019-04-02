@@ -1,63 +1,14 @@
-import json
 import jwt
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.conf import settings
 from django.http import JsonResponse
 from django.core.mail import send_mail
-from django.views.generic import View
 from django.contrib.auth import get_user_model, authenticate, login
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.hashers import make_password
-from bb_user.models import UserSessions
 
-
-class APIView(View):
-    user_model = get_user_model()
-
-    def get_access_token(self, request):
-        try:
-            access_token = request.META['HTTP_AUTHORIZATION']
-        except KeyError:
-            access_token = None
-        return access_token
-
-    def get_user_session(self, access_token):
-        try:
-            session = UserSessions.objects.get(access_token=access_token)
-        except UserSessions.DoesNotExist:
-            return False
-        return session
-
-    def access_token_is_expired(self, access_token):
-        session = UserSessions.objects.get(access_token=access_token)
-        if session.expired_at < datetime.now(timezone.utc):
-            return True
-        return False
-
-    def get_parameters(self, request):
-        parameters = {}
-        try:
-            if request.method in ('POST', 'PUT'):
-                parameters = json.loads(request.body)
-
-            if request.method == 'GET':
-                parameters = request.GET
-
-        except:
-            return JsonResponse({'Message': 'Load Data Error'}, status=500)
-
-        return parameters
-
-    @csrf_exempt
-    def dispatch(self, request, *args, **kwargs):
-        self.access_token = self.get_access_token(request)
-        self.session = self.get_user_session(self.access_token)
-        #try:
-        result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
-        #except:
-            #return JsonResponse({'Message': 'Something wrong'}, status=500)
-        return result
+from bb_user.models import AuthToken
+from utils.api.views import APIView
 
 
 class UserRegister(APIView):
@@ -119,7 +70,7 @@ class UserLogin(APIView):
             }, status=400)
         else:
             access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY, algorithm='HS256')
-            session = UserSessions.objects.create(
+            session = AuthToken.objects.create(
                 user=user,
                 access_token=access_token.decode('utf-8')
             )
@@ -135,3 +86,8 @@ class UserLogout(APIView):
         if self.session:
             self.session.delete()
         return JsonResponse({'message': 'Logged out'}, status=200)
+
+
+class UserBlock(APIView):
+    def get(self, request, *args, **kwargs):
+        pass
