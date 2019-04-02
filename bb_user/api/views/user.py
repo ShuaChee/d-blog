@@ -93,7 +93,10 @@ class UserBlock(APIPermissionsMixin, APIView):
     def post(self, request, *args, **kwargs):
         access_token = self.get_access_token(request)
         if self.has_permissions(access_token):
-            user = self.user_model.objects.get(pk=request.META)
+            try:
+                user = self.user_model.objects.get(pk=request.META['user_id'])
+            except self.user_model.DoesNotExists:
+                return JsonResponse({'message': 'User not found'}, status=404)
             user.is_blocked = True
             user.save()
             return JsonResponse({'message': 'done'}, status=200)
