@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import make_password
 
 from bb_user.models import AuthToken
 from utils.api.views import APIView
+from utils.api.mixins import APIPermissionsMixin
 
 
 class UserRegister(APIView):
@@ -88,6 +89,13 @@ class UserLogout(APIView):
         return JsonResponse({'message': 'Logged out'}, status=200)
 
 
-class UserBlock(APIView):
-    def get(self, request, *args, **kwargs):
-        pass
+class UserBlock(APIPermissionsMixin, APIView):
+    def post(self, request, *args, **kwargs):
+        access_token = self.get_access_token(request)
+        if self.has_permissions(access_token):
+            user = self.user_model.objects.get(pk=request.META)
+            user.is_blocked = True
+            user.save()
+            return JsonResponse({'message': 'done'}, status=200)
+        return JsonResponse({'message': 'access denied'}, status=403)
+
