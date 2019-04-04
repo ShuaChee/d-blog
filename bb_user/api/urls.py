@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from bb_user.api.views import user
 
@@ -8,4 +8,5 @@ urlpatterns = [
     path('login/', user.UserLogin.as_view(), name='login'),
     path('logout/', user.UserLogout.as_view()),
     path('block/', user.UserBlock.as_view()),
+    path(r'reset/', user.UserResetPassword.as_view())
 ]

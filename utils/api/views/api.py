@@ -39,6 +39,8 @@ class APIView(View):
                 parameters = json.loads(request.body)
 
             if request.method == 'GET':
+                if not request.GET._mutable:
+                    request.GET._mutable = True
                 parameters = request.GET
 
         except:

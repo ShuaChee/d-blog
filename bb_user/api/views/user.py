@@ -1,4 +1,5 @@
 import jwt
+import uuid
 from datetime import datetime
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.contrib.auth import get_user_model, authenticate, login
 from django.contrib.auth.hashers import make_password
 
 from bb_user.models import AuthToken
-from bb_user.api.forms.user import CreateForm
+from bb_user.api.forms.user import CreateForm, PasswordResetForm
 from utils.api.views import APIView
 from utils.api.mixins import APIPermissionsMixin
 
@@ -32,30 +33,6 @@ class UserRegister(APIView):
         else:
             errors = form.errors.as_json()
             return JsonResponse(errors, status=500, safe=False)
-
-        ''' if parameters['password'] != parameters['confirm_password']:
-            return JsonResponse({'message': 'Check password'}, status=400)
-
-        if self.user_model.objects.filter(username=parameters['username']):
-            return JsonResponse({'message': 'Username already taken'}, status=400)
-
-        if self.user_model.objects.filter(email=parameters['email']):
-            return JsonResponse({'message': 'Email already taken'}, status=400)
-
-        user = self.user_model.objects.create(
-            username=parameters['username'],
-            password=make_password(parameters['password']),
-            email=parameters['email']
-        )
-        user.save()
-        send_mail(
-            'Congratulation! You are registered',
-            'Hello {1}! /n Login: {0} /n Password: {1}'.format(parameters['username'], parameters['password']),
-            settings.ADMIN_EMAIL,
-            [parameters['email']],
-            fail_silently=False,
-        )
-        return JsonResponse({'message': 'User Registered'}, status=200) '''
 
     def get(self, request, *args, **kwargs):
         # todo: this is for example how to call user model!
@@ -83,7 +60,8 @@ class UserLogin(APIView):
                 'message': 'Wrong Username or Password'
             }, status=400)
         else:
-            access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY, algorithm='HS256')
+            access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY,
+                                      algorithm='HS256')
             session = AuthToken.objects.create(
                 user=user,
                 access_token=access_token.decode('utf-8')
@@ -102,6 +80,37 @@ class UserLogout(APIView):
         return JsonResponse({'message': 'Logged out'}, status=200)
 
 
+class UserResetPassword(APIView):
+    def post(self, request, parameters, *args, **kwargs):
+        form = PasswordResetForm(data=parameters)
+        try:
+            user = self.user_model.objects.get(password_reset=parameters['reset_token'])
+        except self.user_model.DoesNotExist:
+            return JsonResponse({
+                'message': 'Token not found'
+            }, status=404)
+        if form.is_valid():
+            user.password = parameters['password']
+            user.save()
+            return JsonResponse({
+                'message': 'Done'
+            }, status=200)
+
+    def get(self, request, parameters, *args, **kwargs):
+        try:
+            user = self.user_model.objects.get(username=parameters['username'])
+        except self.user_model.DoesNotExist:
+            return JsonResponse({
+                'message': 'User not found'
+            }, status=404)
+        token = uuid.uuid4()
+        user.password_reset = token
+        user.save()
+        return JsonResponse({
+            'reset_token': token
+        }, status=200)
+
+
 class UserBlock(APIPermissionsMixin, APIView):
     def post(self, request, parameters, *args, **kwargs):
         access_token = self.get_access_token(request)
@@ -114,4 +123,3 @@ class UserBlock(APIPermissionsMixin, APIView):
             user.save()
             return JsonResponse({'message': 'done'}, status=200)
         return JsonResponse({'message': 'access denied'}, status=403)
-

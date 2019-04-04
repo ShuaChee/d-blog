@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.http import JsonResponse
 
 
 class CreateForm(forms.ModelForm):
@@ -12,6 +11,19 @@ class CreateForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(CreateForm, self).clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        if password != confirm_password:
+            raise forms.ValidationError(
+                "password and confirm_password does not match"
+            )
+        return cleaned_data
+
+
+class PasswordResetForm(forms.Form):
+
+    def clean(self):
+        cleaned_data = super(PasswordResetForm, self).clean()
         password = cleaned_data.get('password')
         confirm_password = cleaned_data.get('confirm_password')
         if password != confirm_password:
