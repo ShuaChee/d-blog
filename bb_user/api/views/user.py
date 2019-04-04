@@ -50,6 +50,8 @@ class UserLogin(APIView):
             return self.login_with_username_and_password(parameters)
 
         user = self.user_model.objects.get(pk=self.session.user.id)
+        if not user.is_active:
+            return JsonResponse({'Message': 'Activate your account'}, status=403)
         login(request, user)
         return JsonResponse({'Message': 'You Are Logged In'}, status=200)
 
@@ -90,7 +92,8 @@ class UserResetPassword(APIView):
                 'message': 'Token not found'
             }, status=404)
         if form.is_valid():
-            user.password = parameters['password']
+            user.password = make_password(parameters['password'])
+            user.password_reset = None
             user.save()
             return JsonResponse({
                 'message': 'Done'
