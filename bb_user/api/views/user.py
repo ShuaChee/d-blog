@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model, authenticate, login
 from django.contrib.auth.hashers import make_password
 
 from bb_user.models import AuthToken
+from bb_user.api.forms.user import CreateForm
 from utils.api.views import APIView
 from utils.api.mixins import APIPermissionsMixin
 
@@ -16,7 +17,23 @@ class UserRegister(APIView):
 
     def post(self, request, parameters, *args, **kwargs):
 
-        if parameters['password'] != parameters['confirm_password']:
+        form = CreateForm(data=parameters)
+
+        if form.is_valid():
+            form.save()
+            send_mail(
+                'Congratulation! You are registered',
+                'Hello {1}! /n Login: {0} /n Password: {1}'.format(parameters['username'], parameters['password']),
+                settings.ADMIN_EMAIL,
+                [parameters['email']],
+                fail_silently=False,
+            )
+            return JsonResponse({'message': 'User Registered'}, status=200)
+        else:
+            errors = form.errors.as_json()
+            return JsonResponse(errors, status=500, safe=False)
+
+        ''' if parameters['password'] != parameters['confirm_password']:
             return JsonResponse({'message': 'Check password'}, status=400)
 
         if self.user_model.objects.filter(username=parameters['username']):
@@ -38,7 +55,7 @@ class UserRegister(APIView):
             [parameters['email']],
             fail_silently=False,
         )
-        return JsonResponse({'message': 'User Registered'}, status=200)
+        return JsonResponse({'message': 'User Registered'}, status=200) '''
 
     def get(self, request, *args, **kwargs):
         # todo: this is for example how to call user model!

@@ -10,6 +10,7 @@ from bb_user.models import AuthToken
 
 class APIView(View):
     user_model = get_user_model()
+    need_auth = False
 
     def get_access_token(self, request):
         try:
