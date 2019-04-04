@@ -21,15 +21,20 @@ class UserRegister(APIView):
         form = CreateForm(data=parameters)
 
         if form.is_valid():
-            form.save()
+            token = uuid.uuid4()
+            user = form.save(commit=False)
+            user.password_reset = token
+            user.save()
+
             send_mail(
                 'Congratulation! You are registered',
-                'Hello {1}! /n Login: {0} /n Password: {1}'.format(parameters['username'], parameters['password']),
+                'Hello {1}!  Login: {0}  Password: {1} Visit this link: http://127.0.0.1:8008/api/user/activate/?t={2}'.format(
+                    parameters['username'], parameters['password'], token),
                 settings.ADMIN_EMAIL,
                 [parameters['email']],
                 fail_silently=False,
             )
-            return JsonResponse({'message': 'User Registered'}, status=200)
+            return JsonResponse({'message': 'User Registered, activate'}, status=200)
         else:
             errors = form.errors.as_json()
             return JsonResponse(errors, status=500, safe=False)
@@ -41,6 +46,18 @@ class UserRegister(APIView):
         return {'message': 'Register'}
 
 
+class UserActivate(APIView):
+    def get(self, request, parameters):
+        try:
+            user = self.user_model.objects.get(password_teset=parameters['t'])
+        except user.DoesNotExist:
+            return JsonResponse({'message': 'Invalid token'}, status=400)
+        user.is_blocked = False
+        user.password_reset = None
+        user.save()
+        return JsonResponse({'message': 'User Activated'}, status=200)
+
+
 class UserLogin(APIView):
     need_auth = True
 
@@ -50,17 +67,22 @@ class UserLogin(APIView):
             return self.login_with_username_and_password(parameters)
 
         user = self.user_model.objects.get(pk=self.session.user.id)
-        if not user.is_active:
+        if user.is_blocked:
             return JsonResponse({'Message': 'Activate your account'}, status=403)
         login(request, user)
         return JsonResponse({'Message': 'You Are Logged In'}, status=200)
 
     def login_with_username_and_password(self, parameters):
-        user = authenticate(username=parameters['username'], password=parameters['password'])
-        if user is None:
+
+        if not authenticate(username=parameters['username'], password=parameters['password']):
             return JsonResponse({
                 'message': 'Wrong Username or Password'
             }, status=400)
+
+        user = self.user_model.objects.get(usename=parameters['username'])
+
+        if user.is_blocked:
+            return JsonResponse({'Message': 'Activate your account'}, status=403)
         else:
             access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY,
                                       algorithm='HS256')
