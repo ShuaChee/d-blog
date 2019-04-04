@@ -48,16 +48,12 @@ class UserRegister(APIView):
 
 
 class UserLogin(APIView):
+    need_auth = True
+
     def post(self, request, parameters, *args, **kwargs):
 
         if not self.access_token:
             return self.login_with_username_and_password(parameters)
-
-        if not self.session:
-            return JsonResponse({'Message': 'Invalid Token'}, status=403)
-
-        if self.access_token_is_expired(self.access_token):
-            return JsonResponse({'Message': 'Relogin Please'}, status=403)
 
         user = self.user_model.objects.get(pk=self.session.user.id)
         login(request, user)

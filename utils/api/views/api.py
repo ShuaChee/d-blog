@@ -49,6 +49,11 @@ class APIView(View):
     def dispatch(self, request, *args, **kwargs):
         self.access_token = self.get_access_token(request)
         self.session = self.get_user_session(self.access_token)
+        if self.need_auth:
+            if not self.session and self.access_token:
+                return JsonResponse({'Message': 'Invalid Token'}, status=403)
+            if self.access_token and self.access_token_is_expired(self.access_token):
+                return JsonResponse({'Message': 'Relogin Please'}, status=403)
         # try:
         result = super(APIView, self).dispatch(request, parameters=self.get_parameters(request), *args, **kwargs)
         # except:
