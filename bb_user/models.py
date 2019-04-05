@@ -8,7 +8,7 @@ class User(AbstractUser):
     # user_name = models.CharField(max_length=30, blank=False)
     email = models.EmailField(unique=True, blank=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    # is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     is_blocked = models.BooleanField(default=True)
     password_reset = models.CharField(max_length=200, blank=True, null=True, default=None)
     # verified = models.BooleanField(default=False)

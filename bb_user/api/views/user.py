@@ -2,19 +2,55 @@ import jwt
 import uuid
 from datetime import datetime
 
-from django.conf import settings
-from django.http import JsonResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+
 from django.core.mail import send_mail
+from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate, login
 from django.contrib.auth.hashers import make_password
 
 from bb_user.models import AuthToken
 from bb_user.api.forms.user import CreateForm, PasswordResetForm
-from utils.api.views import APIView
+# from utils.api.views import APIView
 from utils.api.mixins import APIPermissionsMixin
 
+from bb_user.serializers.user import CreateUserSerializer, ActivateUserSerializer
 
-class UserRegister(APIView):
+
+class UserCreateView(APIView):
+    user_model = get_user_model()
+    def post(self, request):
+        serializer = CreateUserSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        user = serializer.instance
+        token = Token.objects.create(user=user)
+        send_mail(
+            'Congratulation! You are registered',
+            'Hello {0}!  Login: {0}  Visit this link: http://127.0.0.1:8008/api/user/activate/?t={1}'.format(
+                user.username, token.key),
+            settings.ADMIN_EMAIL,
+            [user.email],
+            fail_silently=False,
+        )
+        return Response({'Message': 'User created'}, status=status.HTTP_201_CREATED)
+
+
+class UserActivateView(APIView):
+    def get(self, request):
+        serializer = ActivateUserSerializer()
+        token = request.GET['t']
+        serializer.update(token)
+
+        return Response({'Message': 'User activated'}, status=status.HTTP_200_OK)
+
+
+'''class UserRegister(APIView):
 
     def post(self, request, parameters, *args, **kwargs):
 
@@ -147,4 +183,4 @@ class UserBlock(APIPermissionsMixin, APIView):
             user.is_blocked = True
             user.save()
             return JsonResponse({'message': 'done'}, status=200)
-        return JsonResponse({'message': 'access denied'}, status=403)
+        return JsonResponse({'message': 'access denied'}, status=403)'''
