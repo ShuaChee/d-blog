@@ -1,17 +1,17 @@
-import jwt
-import uuid
-from datetime import datetime
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAdminUser
+from rest_framework.authentication import TokenAuthentication
 
 from django.core.mail import send_mail
+from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, logout
 
-from bb_user.serializers.user import CreateUserSerializer, ActivateUserSerializer, ResetUserPasswordSerializer
+from bb_user.serializers.user import CreateUserSerializer, ActivateUserSerializer, ResetUserPasswordSerializer, \
+    UserBlockSerializer
 
 
 class UserCreateView(APIView):
@@ -45,13 +45,35 @@ class UserActivateView(APIView):
         return Response({'Message': 'User activated'}, status=status.HTTP_200_OK)
 
 
-class UserResetPassword(APIView):
+class UserResetPasswordView(APIView):
     serializer = ResetUserPasswordSerializer()
 
     def get(self, request, *args, **kwargs):
-        response = self.serializer.get_reset_token(request.GET['userid'])
+        response = self.serializer.get_reset_token(request.GET['email'])
         return Response(response, status=status.HTTP_200_OK)
 
     def post(self, request):
         response = self.serializer.reset_password(request.body)
         return Response(response, status=status.HTTP_200_OK)
+
+
+class UserLogoutView(APIView):
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            pass
+
+        return Response({"Message": "Successfully logged out."}, status=status.HTTP_200_OK)
+
+
+class UserBlockView(APIView):
+    permission_classes = (IsAdminUser,)
+    authentication_classes = (TokenAuthentication,)
+
+    def post(self, request, user_id):
+        serializer = UserBlockSerializer()
+        response = serializer.block_user((user_id))
+        return Response(response[0], response[1])
+
+
