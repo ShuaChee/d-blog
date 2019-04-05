@@ -1,104 +1,79 @@
-import jwt
-from datetime import datetime
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import IsAdminUser
+from rest_framework.authentication import TokenAuthentication
 
-from django.conf import settings
-from django.http import JsonResponse
 from django.core.mail import send_mail
-from django.contrib.auth import get_user_model, authenticate, login
-from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ObjectDoesNotExist
+from django.conf import settings
+from django.contrib.auth import get_user_model, logout
 
-from bb_user.models import AuthToken
-from utils.api.views import APIView
-from utils.api.mixins import APIPermissionsMixin
+from bb_user.serializers.user import CreateUserSerializer, ActivateUserSerializer, ResetUserPasswordSerializer, \
+    UserBlockSerializer
 
 
-class UserRegister(APIView):
+class UserCreateView(APIView):
+    user_model = get_user_model()
 
-    def post(self, request, parameters, *args, **kwargs):
+    def post(self, request):
+        serializer = CreateUserSerializer(data=request.data)
 
-        if parameters['password'] != parameters['confirm_password']:
-            return JsonResponse({'message': 'Check password'}, status=400)
-
-        if self.user_model.objects.filter(username=parameters['username']):
-            return JsonResponse({'message': 'Username already taken'}, status=400)
-
-        if self.user_model.objects.filter(email=parameters['email']):
-            return JsonResponse({'message': 'Email already taken'}, status=400)
-
-        user = self.user_model.objects.create(
-            username=parameters['username'],
-            password=make_password(parameters['password']),
-            email=parameters['email']
-        )
-        user.save()
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        user = serializer.instance
+        token = Token.objects.create(user=user)
         send_mail(
             'Congratulation! You are registered',
-            'Hello {1}! /n Login: {0} /n Password: {1}'.format(parameters['username'], parameters['password']),
+            'Hello {0}!  Login: {0}  Visit this link: http://127.0.0.1:8008/api/user/activate/?t={1}'.format(
+                user.username, token.key),
             settings.ADMIN_EMAIL,
-            [parameters['email']],
+            [user.email],
             fail_silently=False,
         )
-        return JsonResponse({'message': 'User Registered'}, status=200)
+        return Response({'Message': 'User created'}, status=status.HTTP_201_CREATED)
+
+
+class UserActivateView(APIView):
+    def get(self, request):
+        serializer = ActivateUserSerializer()
+        token = request.GET['t']
+        serializer.update(token)
+
+        return Response({'Message': 'User activated'}, status=status.HTTP_200_OK)
+
+
+class UserResetPasswordView(APIView):
+    serializer = ResetUserPasswordSerializer()
 
     def get(self, request, *args, **kwargs):
-        # todo: this is for example how to call user model!
-        user_model = get_user_model()
-        user = user_model.objects.get(id=1)
-        return {'message': 'Register'}
+        response = self.serializer.get_reset_token(request.GET['email'])
+        return Response(response, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        response = self.serializer.reset_password(request.body)
+        return Response(response, status=status.HTTP_200_OK)
 
 
-class UserLogin(APIView):
-    def post(self, request, parameters, *args, **kwargs):
+class UserLogoutView(APIView):
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            pass
 
-        if not self.access_token:
-            return self.login_with_username_and_password(parameters)
-
-        if not self.session:
-            return JsonResponse({'Message': 'Invalid Token'}, status=403)
-
-        if self.access_token_is_expired(self.access_token):
-            return JsonResponse({'Message': 'Relogin Please'}, status=403)
-
-        user = self.user_model.objects.get(pk=self.session.user.id)
-        login(request, user)
-        return JsonResponse({'Message': 'You Are Logged In'}, status=200)
-
-    def login_with_username_and_password(self, parameters):
-        user = authenticate(username=parameters['username'], password=parameters['password'])
-        if user is None:
-            return JsonResponse({
-                'message': 'Wrong Username or Password'
-            }, status=400)
-        else:
-            access_token = jwt.encode({'user_id': user.id, 'login_time': str(datetime.now())}, settings.SECRET_KEY, algorithm='HS256')
-            session = AuthToken.objects.create(
-                user=user,
-                access_token=access_token.decode('utf-8')
-            )
-            session.save()
-            return JsonResponse({
-                'message': 'You are logged in',
-                'access_token': access_token.decode('utf-8')
-            }, status=200)
+        return Response({"Message": "Successfully logged out."}, status=status.HTTP_200_OK)
 
 
-class UserLogout(APIView):
-    def post(self, request, *args, **kwargs):
-        if self.session:
-            self.session.delete()
-        return JsonResponse({'message': 'Logged out'}, status=200)
+class UserBlockView(APIView):
+    permission_classes = (IsAdminUser,)
+    authentication_classes = (TokenAuthentication,)
 
+    def post(self, request, user_id):
+        serializer = UserBlockSerializer()
+        response = serializer.block_user((user_id))
+        return Response(response[0], response[1])
 
-class UserBlock(APIPermissionsMixin, APIView):
-    def post(self, request, *args, **kwargs):
-        access_token = self.get_access_token(request)
-        if self.has_permissions(access_token):
-            try:
-                user = self.user_model.objects.get(pk=request.META['user_id'])
-            except self.user_model.DoesNotExists:
-                return JsonResponse({'message': 'User not found'}, status=404)
-            user.is_blocked = True
-            user.save()
-            return JsonResponse({'message': 'done'}, status=200)
-        return JsonResponse({'message': 'access denied'}, status=403)
 
