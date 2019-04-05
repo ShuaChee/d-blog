@@ -10,5 +10,5 @@ urlpatterns = [
     # path('logout/', user.UserLogout.as_view()),
     # path('block/', user.UserBlock.as_view()),
     path('activate/', user.UserActivateView.as_view()),
-    # path('reset/', user.UserResetPassword.as_view())
+    path('reset/', user.UserResetPassword.as_view())
 ]

@@ -1,7 +1,9 @@
+import json
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -39,3 +41,41 @@ class ActivateUserSerializer(serializers.ModelSerializer):
         token.delete()
         return user
 
+
+class ResetUserPasswordSerializer(serializers.ModelSerializer):
+    user_model = get_user_model()
+
+    class Meta:
+        model = get_user_model()
+        fields = ['password', 'auth_token']
+
+    def get_reset_token(self, user_id):
+        try:
+            user = self.user_model.objects.get(pk=user_id)
+        except self.user_model.DoesNonExist:
+            raise serializers.ValidationError({'user': 'User not found'})
+
+        try:
+            token = Token.objects.get(user=user)
+            token.delete()
+        except Token.DoesNotExist:
+            pass
+
+        token = Token.objects.create(user=user)
+
+        return {'Token': token.key}
+
+    def reset_password(self, data):
+        data = json.loads(data)
+        try:
+            token = Token.objects.get(key=data['reset_token'])
+        except Token.DoesNotExist:
+            serializers.ValidationError({'reset_token': 'Invalid token'})
+
+        if data['password'] != data['confirm_password']:
+            raise serializers.ValidationError({'password': 'Check password'})
+
+        user = token.user
+        token.delete()
+        user.password = make_password(data['password'])
+        return {'Message': 'Password changed'}
