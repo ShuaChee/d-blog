@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -21,7 +21,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         confirm_password = validated_data.pop('confirm_password', None)
         if validated_data.get('password') != confirm_password:
-            raise serializers.ValidationError({'password': 'Check password'})
+            raise serializers.ValidationError({'Message': 'Passwords mismatch'})
         model = get_user_model()
         user = model.objects.create_user(**validated_data)
         user.is_active = False
@@ -74,7 +74,7 @@ class ResetUserPasswordSerializer(serializers.ModelSerializer):
             [email],
             fail_silently=False,
         )
-        return {"Message": "Reset link sent"}
+        return {"Message": "Reset link sent"}, 200
 
     def reset_password(self, data):
         data = json.loads(data)
