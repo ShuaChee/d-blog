@@ -4,8 +4,8 @@ from bb_post.api.forms.post import CreateForm
 from bb_post.api.mixins import PostAPIMixin
 from bb_post.api.serializers.post import serialize as serialize_post
 from bb_post.models import Post
-from utils.api.exceptions import RequestValidationFailedAPIError
-from utils.api.mixins import APIMixin
+from utils.exceptions import RequestValidationFailedAPIError
+from utils.mixins import APIMixin
 
 import bb_post.services.post
 
