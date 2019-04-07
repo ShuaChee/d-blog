@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 from rest_framework.test import APIRequestFactory
 
 from bb_user.models import User
-from bb_user.api.views.user import UserCreateView
+from bb_user.api.views import UserCreateView
 
 
 class UserLoginViewTestCase(APITestCase):
