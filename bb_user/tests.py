@@ -1,12 +1,9 @@
 import json
 from rest_framework.test import APITestCase
-from rest_framework.test import APIRequestFactory, APIClient
-from rest_framework.authtoken.views import obtain_auth_token
-from rest_framework import status
+from rest_framework.test import APIRequestFactory
 
 from bb_user.models import User
 from bb_user.api.views.user import UserCreateView
-
 
 
 class UserLoginViewTestCase(APITestCase):
