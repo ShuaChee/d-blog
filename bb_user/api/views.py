@@ -40,7 +40,6 @@ class UserActivateView(APIView):
         serializer = ActivateUserSerializer()
         token = request.GET['t']
         serializer.update(token)
-
         return Response({'Message': 'User activated'}, status=status.HTTP_200_OK)
 
 
@@ -72,5 +71,5 @@ class UserBlockView(APIView):
 
     def post(self, request, user_id):
         serializer = UserBlockSerializer()
-        response = serializer.block_user((user_id))
+        response = serializer.block_user(user_id)
         return Response(response[0], response[1])
