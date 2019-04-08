@@ -8,6 +8,7 @@ from bb_user.api.views import UserCreateView
 from bb_user.api.views import UserActivateView
 from bb_user.api.views import UserResetPasswordView
 
+
 class UserCreateViewTestCase(APITestCase):
 
     def setUp(self):

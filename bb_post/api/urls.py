@@ -5,4 +5,5 @@ from .views import post
 urlpatterns = [
     path('', post.Collection.as_view()),
     path('<int:post_id>/', post.Single.as_view()),
+    path('v2/', post.PostView.as_view())
 ]
