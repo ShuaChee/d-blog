@@ -1,14 +1,13 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
 from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAdminUser
-from rest_framework.authentication import TokenAuthentication
-
-from django.core.mail import send_mail
-from django.core.exceptions import ObjectDoesNotExist
-from django.conf import settings
-from django.contrib.auth import get_user_model, logout
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from bb_user.serializers.user import CreateUserSerializer, ActivateUserSerializer, ResetUserPasswordSerializer, \
     UserBlockSerializer
@@ -75,5 +74,3 @@ class UserBlockView(APIView):
         serializer = UserBlockSerializer()
         response = serializer.block_user((user_id))
         return Response(response[0], response[1])
-
-

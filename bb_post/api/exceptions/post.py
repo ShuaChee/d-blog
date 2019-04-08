@@ -1,4 +1,4 @@
-from utils.api.exceptions import APIError
+from utils.exceptions import APIError
 
 
 class PostAPIError(APIError):

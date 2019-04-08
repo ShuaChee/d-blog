@@ -1,8 +1,9 @@
 import json
 from datetime import datetime, timezone
-from django.views.generic import View
-from django.http import JsonResponse
+
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from bb_user.models import AuthToken

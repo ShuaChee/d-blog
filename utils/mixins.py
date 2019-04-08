@@ -1,15 +1,14 @@
-from __future__ import unicode_literals
-
 import json
 
-from django.http import HttpResponse, HttpResponseServerError
+from django.http import HttpResponseServerError, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from utils.api.exceptions import APIError, RequestDecodeFailedAPIError
+from bb_user.models import AuthToken
+from utils.exceptions import RequestDecodeFailedAPIError, APIError
 
 
 class APIMixin(object):
-    
+
     def get_parameters(self, request):
 
         parameters = {}
@@ -57,3 +56,12 @@ class APIMixin(object):
 
     def render_to_response(self, result, response_class=HttpResponse):
         return response_class(json.dumps(result), content_type='application/json')
+
+
+class APIPermissionsMixin:
+    def has_permissions(self, access_token):
+        access_token = AuthToken.objects.get(access_token=access_token)
+        user = access_token.user
+        if user.is_superuser:
+            return True
+        return False

@@ -1,4 +1,5 @@
-from utils.api.exceptions import APIError
+class APIError(Exception):
+    code = None
 
 
 class RequestAPIError(APIError):
