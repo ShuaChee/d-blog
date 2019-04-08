@@ -81,7 +81,7 @@ class ResetUserPasswordSerializer(serializers.ModelSerializer):
         try:
             token = Token.objects.get(key=data['reset_token'])
         except ObjectDoesNotExist:
-            serializers.ValidationError({'reset_token': 'Invalid token'})
+            raise serializers.ValidationError({'reset_token': 'Invalid token'})
 
         if data['password'] != data['confirm_password']:
             raise serializers.ValidationError({'password': 'Check password'})
